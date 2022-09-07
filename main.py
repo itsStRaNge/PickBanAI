@@ -2,11 +2,11 @@ import time
 
 import requests
 import pandas as pd
-import sqlite3
 from bs4 import BeautifulSoup
 
 URL = "https://gol.gg/game/stats/%s/page-game/"
 TEAM_OFFSET = 10
+MAX_GAME_ID = 1500  # 100000
 
 
 def get_game_page(game_id: int) -> BeautifulSoup:
@@ -49,46 +49,36 @@ def format_game(game_id: int, champs: [str], win: bool) -> {}:
         "blue_p3": champs[7],
         "red_p3": champs[7 + TEAM_OFFSET],
 
-        "blue_b4": champs[3 + TEAM_OFFSET],
+        "blue_b4": champs[3],
         "red_b4": champs[3 + TEAM_OFFSET],
-        "blue_b5": champs[4 + TEAM_OFFSET],
+        "blue_b5": champs[4],
         "red_b5": champs[4 + TEAM_OFFSET],
 
         "red_p4": champs[8 + TEAM_OFFSET],
-        "blue_p4": champs[8 + TEAM_OFFSET],
-        "blue_p5": champs[9 + TEAM_OFFSET],
+        "blue_p4": champs[8 ],
+        "blue_p5": champs[9],
         "red_p5": champs[9 + TEAM_OFFSET],
     }
 
+
 def main():
     all_games = []
-    error_count = 0
     game_id = 1002
-    while True:
+    while game_id < MAX_GAME_ID:
         try:
             print(f"Extracting game {game_id}")
             game_page = get_game_page(game_id)
             champs, win = extract_game(game_page)
             all_games.append(format_game(game_id, champs, win))
-            error_count = 0
+            error = False
         except ValueError:
-            if error_count == 0:
-                print("Could not parse game, retrying")
-                game_id -= 1  # retry
-                time.sleep(2)
-            elif error_count > 3:
-                break
-            else:
-                time.sleep(0.5)
-            error_count += 1
+            pass
         finally:
             game_id += 1
 
     df = pd.DataFrame(all_games)
+    df.to_csv("games.csv", index=False)
     print(df)
 
-    cnx = sqlite3.connect('database.sqlite')
-    df.to_sql(name='pickban', con=cnx)
-    # pd.read_sql('select * from price2', cnx)
 
 main()
