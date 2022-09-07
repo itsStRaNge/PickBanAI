@@ -78,6 +78,8 @@ def main():
 
     df = pd.DataFrame(all_games)
     df.to_csv("games.csv", index=False)
+    missing = list(set([i for i in range(1002, 1500)]) - set(df['game_id'].to_list()))
+    print(f"Missing games {len(missing)} ~= {len(missing) * 100 / len(df):.1f}%")
     print(df)
 
 
